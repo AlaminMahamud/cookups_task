@@ -7,7 +7,8 @@ from django.views import generic
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.renderers import JSONRenderer
 from rest_framework.parsers import JSONParser
-
+from rest_framework import generics
+#from rest_framework.views import APIView
 from .models import Choice, Poll
 from .serializers import ChoiceSerializer, PollSerializer
 
@@ -44,6 +45,7 @@ def poll_list(request):
             return JsonResponse(serializer.data, status=201)
         return JsonResponse(serializer.errors, status=400)
 
+
 @csrf_exempt
 def poll_detail(request, pk):
     """
@@ -69,6 +71,25 @@ def poll_detail(request, pk):
     elif (request.method == 'DELETE'):
         poll.delete()
         return HttpResponse(status=204)
+
+
+#filtering-can't figure out to implement    
+class PollList(generics.ListCreateAPIView):
+    model = Poll
+    serializer_class = PollSerializer
+        
+    def get_queryset(self):
+        queryset = Poll.objects.all()
+        
+        workspace = self.request.query_params.get('workspace')
+        airline = self.request.query_params.get('airline')
+
+        if workspace:
+            queryset = queryset.filter(workspace_id=workspace)
+        elif airline:
+            queryset = queryset.filter(workspace__airline_id=airline)
+
+        return queryset
     
 class IndexView(generic.ListView):
     template_name = 'polls/index.html'
